@@ -2,11 +2,11 @@
 
 # Selenium을 이용한 자동화 코딩하기 
 
-오랜만에 코딩자료로 돌아왔습니당 ㅎㅎ 
+>  오랜만에 코딩자료로 돌아왔습니당 ㅎㅎ 
+>
+> 정리에 앞서 README내용이 [코딩하는 거니 - 파이썬으로 한글 만춤법 검사 자동화 코딩하기](https://www.youtube.com/watch?v=afv7vsgweBE)를 참고 하여 작성 되었음을 알립니다.
 
-정리에 앞서 README내용이 `코딩하는 거니 - 파이썬으로 한글 만춤법 검사 자동화 코딩하기`를 참고 하여 작성 되었음을 알립니다.
-
-
+사용된 라이브러리 : 웹 자동화 /  `selenium` , 웹 크롤링 / `Beautiful soup`, 시간딜레이 / `time`,  디렉토리 내의 파일 접근 / `open, read, close, write`
 
 ## 0. 개발 환경 설정 
 
@@ -237,4 +237,138 @@ soup.select('태그명[속성1=값1]')
 ```
 
 출처 : https://m.blog.naver.com/kiddwannabe/221177292446
+
+
+
+### 2) 네이버 맞춤법 검사 기준 최대 500자인데 어떻게 끊어서 맞춤법 검사를 할 수 있을까요?
+
+> 여기서 알고리즘 역량이 요구됩니다. 
+>
+> 위에서는 짧은 문장 하나가 제대로 동작하는 것을 확인했다면 우리가 사용하기에 편리한 단위로 프로그램을 동작시켜야합니다. 
+
+데모파일은 [저작권만료 사이트](https://gongu.copyright.or.kr/gongu/main/main.do)에서 가져왔습니다
+
+해당 파일을 제 마음대로 오타나 띄어쓰기를 넣어서 문제가 있는 텍스트로 만들었습니다.
+
+해당 텍스트 파일을 검사기에 검사하기 위해 최대 500자 안으로 나눠서 텍스트가 끝날때 까지 돌릴계획입니다. 
+
+
+
+#### 1. 디렉토리 내의 파일 열기 
+
+```python
+# 같은 폴더내에 있는 파일 열기 
+fp = open("demo.txt", 'r', encoding="utf-8")
+text = fp.read()
+fp.close()
+# print(text)
+```
+
+
+
+![image-20210903234943120](README.assets/image-20210903234943120.png)
+
+해당 파일을 열어서 확인하는 코드입니다.
+
+`printf(text)`를 실행시키면 잘 열리는 것을 확인 할 수 있습니다. 
+
+
+
+#### 2. 해당 파일을 최대 500자 기준으로 나누는 알고리즘 
+
+```python
+# 1. 파일을 500자 기준으로 나누는 코드
+ready_list = []
+while len(text) > 500 : 
+    # 일단 500번째 가져와 
+    temp_str = text[:500]
+    # 500번째를 조건 없이 나누기에는 문장 중간에 잘리면 정확히 검사 X
+    last_space = temp_str.rfind(' ') #배열 맨뒤를 기준으로 공백(' ')위치를 return 
+    temp_str = text[0:last_space]
+    ready_list.append(temp_str)
+
+    # 안잘린 text로 text초기화 
+    text = text[last_space:]
+
+# 마지막까지 넣어라 
+ready_list.append(text)
+```
+
+![image-20210903235112156](README.assets/image-20210903235112156.png)
+
+
+
+#### 3. 나눠 놓은 단위대로 맞춤범 검사기를 돌린다.
+
+```python
+new_str = ''
+for ready in ready_list:
+    content.clear()
+    content.send_keys(ready)
+    content.send_keys(Keys.RETURN)
+    # 검사 버튼을 누르는 동작 수행 
+    btn = driver.find_element_by_class_name("btn_check")
+    btn.send_keys(Keys.RETURN)
+
+    # 여기서 기다리기
+    time.sleep(2)
+    # 웹 크롤링 동작
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    # print(soup)
+
+    #결과 값 가져오기
+    st = soup.select("p._result_text.stand_txt")[0].text
+    
+    # 가독성을 위해 replace 함수 사용 
+    new_str += st.replace('.', '.\n')
+```
+
+
+
+![image-20210903235149571](README.assets/image-20210903235149571.png)
+
+
+
+#### 4. 완성된 str을 파일로 저장하기 
+
+```python
+# 완성본을 .txt로 저장 
+fp = open('result.txt', 'w', encoding="utf-8")
+fp.write(new_str)
+fp.close()
+```
+
+![image-20210903235236513](README.assets/image-20210903235236513.png)
+
+
+
+
+
+#### 5. 결과 확인
+
+![image-20210903235305792](README.assets/image-20210903235305792.png)
+
+
+
+`result.txt`파일이 잘 만들어진 것을 확인할 수 있습니다. 
+
+
+
+## 느낀점 
+
+일단 파이썬을 이용한 코딩이 가장 실용적이라는 것을 한 번 더 깨닫습니다.😀😀
+
+물론 다양한 언어들의 장점이 있지만 파이썬은 특히나 간편하면서도 일상생활을 편리하게 해준다는 것에 있어 더 가치 있는 것 같습니다.
+
+파이썬 프로그래밍이 이런 면에 있어서는 굉장히 간편하고 유용하다는 사실과 1년 전만 해도 이렇게 응용할 수 있는 라이브러리가 없었던 것 같은데 (혹은 제가 발견하지 못한것 일 수도 있는 것 같습니다..ㅎㅎ..) 이렇게나 유용하게 응용이 가능하다니 신기하기도 합니다.
+
+
+
+그리고 알고리즘 역량이 여기서 발휘 되어야 한다는 사실에 살짝 놀랐습니다. 
+
+역시 사람은 응용할 수 있는 사람이 되어야 한다는 것을 깨달았습니다 ㅎㅎ 
+
+아무튼 오늘 하루 짧은 시간 의미 있는 코딩을 진행해 봤습니다! 
+
+기회가 된다면 또 업로드 하겠습니다! 😄😘
 
